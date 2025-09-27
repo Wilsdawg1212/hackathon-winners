@@ -10,7 +10,7 @@ const TX_SERVICE = process.env.TX_SERVICE!
 const SAFE_TX_HASH = process.env.SAFE_TX_HASH!
 
 async function main() {
-  const api = new SafeApiKit({ chainId: CHAIN_ID, txServiceUrl: TX_SERVICE })
+  const api = new SafeApiKit({ chainId: CHAIN_ID, txServiceUrl: TX_SERVICE, apiKey: process.env.API_KEY }) // or apiKey
   const protocol = await Safe.init({
     provider: RPC_URL,
     signer: OWNER2_PK,
