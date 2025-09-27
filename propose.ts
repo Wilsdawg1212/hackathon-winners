@@ -4,6 +4,7 @@ import Safe from '@safe-global/protocol-kit'
 import { MetaTransactionData, OperationType } from '@safe-global/types-kit'
 import { createClient } from '@supabase/supabase-js'
 import { ethers, formatEther } from 'ethers'
+import { getBudget, updateBudget } from './supabaseService'
 
 const RPC_URL = process.env.RPC_URL!
 const SAFE_ADDRESS = process.env.SAFE_ADDRESS!
@@ -17,33 +18,46 @@ const SUPABASE_KEY = process.env.SUPABASE_KEY!
 // Initialize Supabase client
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
-async function getBudget(address: string): Promise<number> {
-  const { data, error } = await supabase
-    .from('budgets')
-    .select('budget')
-    .eq('address', address)
-    .single()
+// Initialize Safe API
+const api = new SafeApiKit({ chainId: CHAIN_ID, txServiceUrl: TX_SERVICE })
 
-  if (error) {
-    throw new Error(`Failed to fetch budget for address ${address}: ${error.message}`)
+export async function proposeTransaction(
+  userAddress: string,
+  recipient: string,
+  value: string
+): Promise<string> {
+  // Initialize Safe SDK
+  const protocol = await Safe.init({
+    provider: RPC_URL,
+    signer: OWNER1_PK,
+    safeAddress: SAFE_ADDRESS
+  })
+
+  // Create the transaction data
+  const txData: MetaTransactionData = {
+    to: recipient,
+    value,
+    data: '0x',
+    operation: 0 // OperationType.Call
   }
 
-  return parseFloat(data.budget)
-}
+  // Propose the transaction to Safe
+  const safeTx = await protocol.createTransaction({ transactions: [txData] })
+  const safeTxHash = await protocol.getTransactionHash(safeTx)
+  const signature = await protocol.signHash(safeTxHash)
 
-async function updateBudget(address: string, newBudget: number): Promise<void> {
-  const { error } = await supabase
-    .from('budgets')
-    .update({ budget: newBudget })
-    .eq('address', address)
+  await api.proposeTransaction({
+    safeAddress: SAFE_ADDRESS,
+    safeTransactionData: safeTx.data,
+    safeTxHash,
+    senderAddress: userAddress,
+    senderSignature: signature.data
+  })
 
-  if (error) {
-    throw new Error(`Failed to update budget for address ${address}: ${error.message}`)
-  }
+  return safeTxHash
 }
 
 async function main() {
-  const api = new SafeApiKit({ chainId: CHAIN_ID, txServiceUrl: TX_SERVICE })
   const protocol = await Safe.init({
     provider: RPC_URL,
     signer: OWNER1_PK,
