@@ -1,38 +1,25 @@
 import 'dotenv/config'
 import express, { Request, Response } from 'express'
 import { ethers } from 'ethers'
-import { getBudget, updateBudget } from './supabaseService'
-import { createClient } from '@supabase/supabase-js'
+import { getDepartmentForUser, getBudgetForDepartment, updateBudgetForDepartment, addTransaction } from './supabaseService'
 import { proposeTransaction } from './propose'
-
-const SUPABASE_URL = process.env.SUPABASE_URL!
-const SUPABASE_KEY = process.env.SUPABASE_KEY!
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
-
-export async function addTransaction(userAddress: string, recipient: string, value: string): Promise<void> {
-  const { error } = await supabase
-    .from('transactions')
-    .insert([{ address: userAddress, recipient, value }])
-
-  if (error) {
-    throw new Error(`Failed to add transaction: ${error.message}`)
-  }
-}
 
 const app = express()
 app.use(express.json()) // Middleware to parse JSON requests
 
-// Endpoint to handle transactions
 app.post('/transaction', async (req: Request, res: Response) => {
-  const { userAddress, recipient, value } = req.body
+  const { userId, recipient, value } = req.body
 
-  if (!userAddress || !recipient || !value) {
-    return res.status(400).json({ error: 'Missing required fields: userAddress, recipient, or value' })
+  if (!userId || !recipient || !value) {
+    return res.status(400).json({ error: 'Missing required fields: userId, recipient, or value' })
   }
 
   try {
-    // Fetch the user's budget from Supabase
-    const currentBudget = await getBudget(userAddress)
+    // Fetch the user's department
+    const departmentId = await getDepartmentForUser(userId)
+
+    // Fetch the department's budget
+    const currentBudget = await getBudgetForDepartment(departmentId)
 
     // Convert transaction value from wei to ETH
     const txValueInEth = parseFloat(ethers.formatEther(value))
@@ -43,11 +30,16 @@ app.post('/transaction', async (req: Request, res: Response) => {
     }
 
     // Propose the transaction
-    const safeTxHash = await proposeTransaction(userAddress, recipient, value)
+    const safeTxHash = await proposeTransaction(userId, recipient, value)
 
-    // Update the user's budget in Supabase
+    // Update the department's budget
     const newBudget = currentBudget - txValueInEth
-    await updateBudget(userAddress, newBudget)
+    await updateBudgetForDepartment(departmentId, newBudget)
+
+    // Add the transaction to the database
+    const senderWallet = userId // Assuming `userId` is the sender's wallet address
+    const ownerWallet = process.env.SAFE_ADDRESS! // Safe owner's wallet address
+    await addTransaction(senderWallet, ownerWallet, recipient, safeTxHash, txValueInEth)
 
     res.status(200).json({
       message: 'Transaction proposed successfully',
@@ -59,8 +51,7 @@ app.post('/transaction', async (req: Request, res: Response) => {
   }
 })
 
-// Start the server
 const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${3000}`)
+  console.log(`Server is running on port ${PORT}`)
 })

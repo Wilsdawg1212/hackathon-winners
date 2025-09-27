@@ -51,3 +51,70 @@ export async function addUser(address: string, name: string, initialBudget: numb
     throw new Error(`Failed to add budget: ${budgetError.message}`)
   }
 }
+
+// Fetch the department ID for a user
+export async function getDepartmentForUser(userId: string): Promise<number> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('department_id')
+    .eq('id', userId)
+    .single()
+
+  if (error) {
+    throw new Error(`Failed to fetch department for user ${userId}: ${error.message}`)
+  }
+
+  return data.department_id
+}
+
+// Fetch the budget for a department
+export async function getBudgetForDepartment(departmentId: number): Promise<number> {
+  const { data, error } = await supabase
+    .from('budgets')
+    .select('budget')
+    .eq('department', departmentId)
+    .single()
+
+  if (error) {
+    throw new Error(`Failed to fetch budget for department ${departmentId}: ${error.message}`)
+  }
+
+  return data.budget
+}
+
+// Update the budget for a department
+export async function updateBudgetForDepartment(departmentId: number, newBudget: number): Promise<void> {
+  const { error } = await supabase
+    .from('budgets')
+    .update({ budget: newBudget })
+    .eq('department', departmentId)
+
+  if (error) {
+    throw new Error(`Failed to update budget for department ${departmentId}: ${error.message}`)
+  }
+}
+
+// Add a transaction record to the database
+export async function addTransaction(
+  senderWallet: string,
+  ownerWallet: string,
+  receiverWallet: string,
+  transactionId: string,
+  amount: number
+): Promise<void> {
+  const { error } = await supabase
+    .from('transactions')
+    .insert([
+      {
+        sender_wallet: senderWallet,
+        owner_wallet: ownerWallet,
+        receiver_wallet: receiverWallet,
+        transaction_id: transactionId,
+        amount
+      }
+    ])
+
+  if (error) {
+    throw new Error(`Failed to add transaction: ${error.message}`)
+  }
+}

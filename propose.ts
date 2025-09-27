@@ -57,6 +57,48 @@ export async function proposeTransaction(
   return safeTxHash
 }
 
+// Fetch the department ID for a user
+export async function getDepartmentForUser(userAddress: string): Promise<number> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('department')
+    .eq('address', userAddress)
+    .single()
+
+  if (error) {
+    throw new Error(`Failed to fetch department for user ${userAddress}: ${error.message}`)
+  }
+
+  return data.department
+}
+
+// Fetch the budget for a department
+export async function getBudgetForDepartment(departmentId: number): Promise<number> {
+  const { data, error } = await supabase
+    .from('budgets')
+    .select('budget')
+    .eq('department', departmentId)
+    .single()
+
+  if (error) {
+    throw new Error(`Failed to fetch budget for department ${departmentId}: ${error.message}`)
+  }
+
+  return data.budget
+}
+
+// Update the budget for a department
+export async function updateBudgetForDepartment(departmentId: number, newBudget: number): Promise<void> {
+  const { error } = await supabase
+    .from('budgets')
+    .update({ budget: newBudget })
+    .eq('department', departmentId)
+
+  if (error) {
+    throw new Error(`Failed to update budget for department ${departmentId}: ${error.message}`)
+  }
+}
+
 async function main() {
   const protocol = await Safe.init({
     provider: RPC_URL,
