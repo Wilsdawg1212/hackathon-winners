@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ethers } from 'ethers';
 import { groupOpsPolicyAbi } from '@/lib/abis/groupOpsPolicy';
 
-const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL!;
+const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || 'https://rpc.gnosis.gateway.fm';
 const POLICY_ADDRESS = process.env.NEXT_PUBLIC_POLICY_ADDRESS || '0x0000000000000000000000000000000000000000';
 
 export async function GET() {
