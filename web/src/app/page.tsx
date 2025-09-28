@@ -108,13 +108,22 @@ export default function Home() {
           <p className="text-lg text-gray-600 mb-8">
             Start making secure, policy-enforced payments today.
           </p>
-          <Link
-            href="/payments"
-            className="inline-flex items-center bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-8 rounded-lg transition-colors"
-          >
-            Get Started with Payments
-            <ArrowRight className="ml-2 w-5 h-5" />
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/payments"
+              className="inline-flex items-center bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-8 rounded-lg transition-colors"
+            >
+              Get Started with Payments
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Link>
+            <Link
+              href="/safe-test"
+              className="inline-flex items-center bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 px-8 rounded-lg transition-colors"
+            >
+              Test Safe Global Connection
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Link>
+          </div>
         </div>
       </div>
     </div>
